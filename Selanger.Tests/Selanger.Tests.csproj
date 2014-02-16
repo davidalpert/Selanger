@@ -61,6 +61,14 @@
       <Name>Selanger.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="TypeAnalyzerTests.CanGenerateTypeReport.approved.txt">
+      <DependentUpon>TypeAnalyzerTests.cs</DependentUpon>
+    </Content>
+    <Content Include="TypeAnalyzerTests.CanGenerateTypeReportForListOfAssemblies.approved.txt">
+      <DependentUpon>TypeAnalyzerTests.cs</DependentUpon>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
