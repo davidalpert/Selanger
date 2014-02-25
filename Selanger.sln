@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger", "Selanger\Selanger.fsproj", "{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger.Core", "Selanger.Core\Selanger.Core.fsproj", "{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selanger.Tests", "Selanger.Tests\Selanger.Tests.csproj", "{625668B2-7336-4E65-9B82-EBBFC5CEEE47}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger.CLI", "Selanger.CLI\Selanger.CLI.fsproj", "{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selanger.CLI.Tests", "Selanger.CLI.Tests\Selanger.CLI.Tests.csproj", "{E8F206B6-C788-49E4-9FF1-C2240F5F6169}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -25,6 +23,14 @@ Global
 		{625668B2-7336-4E65-9B82-EBBFC5CEEE47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{625668B2-7336-4E65-9B82-EBBFC5CEEE47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{625668B2-7336-4E65-9B82-EBBFC5CEEE47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8F206B6-C788-49E4-9FF1-C2240F5F6169}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8F206B6-C788-49E4-9FF1-C2240F5F6169}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8F206B6-C788-49E4-9FF1-C2240F5F6169}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8F206B6-C788-49E4-9FF1-C2240F5F6169}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

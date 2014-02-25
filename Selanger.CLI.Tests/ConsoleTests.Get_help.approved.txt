@@ -1,0 +1,10 @@
+﻿Selanger [options] -i solution1.sln solution2.sln ...
+
+Options:
+-r|report {reportType} - configures the report type
+
+Report Types (default: projectGraph)
+ n|namespaces - list the namespaces in the included projects
+ r|references - list the assembly referenced by the included projects
+ pg|projectGraph - dump a graph of the solution/project structure
+

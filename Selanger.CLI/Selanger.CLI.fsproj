@@ -23,7 +23,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\Selanger.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>-i D:\dev\KORE.Provisioning.git-svn</StartArguments>
+    <StartArguments>-i c:\users\dalpert\Selanger.git\Selanger.sln</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -37,6 +37,14 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FubuCore">
+      <HintPath>..\packages\FubuCore.1.2.0.272\lib\FubuCore.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FubuCsProjFile">
+      <HintPath>..\packages\FubuCsProjFile.1.1.0.83\lib\net40\FubuCsProjFile.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -49,6 +57,7 @@
     <Compile Include="CommandLineOptions.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Selanger.Core\Selanger.Core.fsproj">

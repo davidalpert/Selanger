@@ -4,58 +4,64 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>af6b73c4-a21d-4f49-8235-05b4ecccb5db</ProjectGuid>
+    <ProjectGuid>{E8F206B6-C788-49E4-9FF1-C2240F5F6169}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Selanger.Core</RootNamespace>
-    <AssemblyName>Selanger.Core</AssemblyName>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Selanger.CLI.Tests</RootNamespace>
+    <AssemblyName>Selanger.CLI.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>Selanger.Core</Name>
+    <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Selanger.Core.XML</DocumentationFile>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Selanger.Core.XML</DocumentationFile>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
   <ItemGroup>
-    <Compile Include="TypeAnalyzer.fs" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="FubuCore">
-      <HintPath>..\packages\FubuCore.1.0.0.225\lib\FubuCore.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ApprovalTests">
+      <HintPath>..\packages\ApprovalTests.3.0.5\lib\net40\ApprovalTests.dll</HintPath>
     </Reference>
-    <Reference Include="FubuCsProjFile">
-      <HintPath>..\packages\FubuCsProjFile.1.1.0.83\lib\net40\FubuCsProjFile.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ApprovalUtilities">
+      <HintPath>..\packages\ApprovalUtilities.3.0.5\lib\net35\ApprovalUtilities.dll</HintPath>
     </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConsoleTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RedirectedConsole.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Selanger.CLI\Selanger.CLI.fsproj">
+      <Project>{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}</Project>
+      <Name>Selanger.CLI</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
