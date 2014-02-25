@@ -62,10 +62,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TypeAnalyzerTests.CanGenerateTypeReport.approved.txt">
+    <Content Include="TypeAnalyzerTests.CanGenerateNamespaceReport.approved.txt">
       <DependentUpon>TypeAnalyzerTests.cs</DependentUpon>
     </Content>
-    <Content Include="TypeAnalyzerTests.CanGenerateTypeReportForListOfAssemblies.approved.txt">
+    <Content Include="TypeAnalyzerTests.CanGenerateNamespaceReportForListOfAssemblies.approved.txt">
       <DependentUpon>TypeAnalyzerTests.cs</DependentUpon>
     </Content>
   </ItemGroup>
