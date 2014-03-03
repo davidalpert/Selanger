@@ -1,5 +1,7 @@
 ﻿module CommandLineOptions
 
+open System.IO
+
 // pattern sourced from: http://fsharpforfunandprofit.com/posts/pattern-matching-command-line/
 
 type OutputFormatOption = OutputCSV //| OutputXML
@@ -9,13 +11,15 @@ type CommandLineOptions = {
     files: string list;
     outputFormat : OutputFormatOption;
     report: ReportTypeOption;
+    outputFile: FileInfo Option;
 }
 
-let print_help =
+let print_help() =
     printfn ""
     printfn "Selanger [options] -i solution1.sln solution2.sln ..."
     printfn ""
     printfn "Options:"
+    printfn "-o|output {filepath} - path to the output file"
     printfn "-r|report {reportType} - configures the report type"
     printfn ""
     printfn "Report Types (default: projectGraph)"
@@ -29,11 +33,19 @@ let defaultOptions = {
         files = [];
         outputFormat = OutputCSV;
         report = ProjectGraphReport;
+        outputFile = None;
     }
 
 // create the "helper" recursive function
 let rec parseCommandLineRec args optionsSoFar = 
     match args with 
+
+    | "-o"::xs 
+    | "-output"::xs ->
+        //start a submatch on the next arg
+        match xs with
+        | file_path::xss ->
+            parseCommandLineRec xss { optionsSoFar with outputFile=Some(new FileInfo(file_path)) }
 
     | "-i"::filePaths 
     | "-input"::filePaths ->
