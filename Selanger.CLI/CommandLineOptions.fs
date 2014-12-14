@@ -37,52 +37,52 @@ let defaultOptions = {
     }
 
 // create the "helper" recursive function
-let rec parseCommandLineRec args optionsSoFar = 
-    match args with 
+let rec parseCommandLineRec args optionsSoFar =
+    match args with
 
-    | "-o"::xs 
+    | "-o"::xs
     | "-output"::xs ->
         //start a submatch on the next arg
         match xs with
         | file_path::xss ->
             parseCommandLineRec xss { optionsSoFar with outputFile=Some(new FileInfo(file_path)) }
 
-    | "-i"::filePaths 
+    | "-i"::filePaths
     | "-input"::filePaths ->
         { optionsSoFar with files=filePaths }
 
-    | "-r"::xs 
+    | "-r"::xs
     | "-report"::xs ->
         //start a submatch on the next arg
         match xs with
-        | "pg"::xss 
-        | "projectGraph"::xss -> 
+        | "pg"::xss
+        | "projectGraph"::xss ->
             parseCommandLineRec xss { optionsSoFar with report=ProjectGraphReport}
 
-        | "n"::xss 
-        | "namespaces"::xss -> 
+        | "n"::xss
+        | "namespaces"::xss ->
             parseCommandLineRec xss { optionsSoFar with report=NamespaceReport}
 
-        | "r"::xss 
-        | "references"::xss -> 
+        | "r"::xss
+        | "references"::xss ->
             parseCommandLineRec xss { optionsSoFar with report=ReferencesReport}
 
         // handle unrecognized option and keep looping
-        | _ -> 
+        | _ ->
             eprintfn "ReportType needs a second argument (n|namespaces)"
-            parseCommandLineRec xs optionsSoFar 
+            parseCommandLineRec xs optionsSoFar
 
     // handle unrecognized option and keep looping
-    | x::xs -> 
+    | x::xs ->
         eprintfn "Option '%s' is unrecognized" x
-        parseCommandLineRec xs optionsSoFar 
+        parseCommandLineRec xs optionsSoFar
 
     // empty list means we're done.
-    | [] -> 
-       optionsSoFar  
+    | [] ->
+       optionsSoFar
 
-// create the "public" parse function
-let parseCommandLine (args:string[]) = 
+// the "public" parse function
+let parseCommandLine (args:string[]) =
     // call the recursive one with the initial options
     let argList = List.ofSeq args
-    parseCommandLineRec argList defaultOptions 
+    parseCommandLineRec argList defaultOptions

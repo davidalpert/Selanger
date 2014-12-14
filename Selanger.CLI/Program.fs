@@ -9,7 +9,7 @@ open Microsoft.FSharp.Core.Printf
 open CommandLineOptions
 
 [<EntryPoint>]
-let public Main argv = 
+let public Main argv =
     let opt = parseCommandLine argv
 
     let toFileInfo f = new FileInfo(f)
@@ -18,7 +18,7 @@ let public Main argv =
 
     match opt.files.Length with
     | 0 -> print_help()
-    | _ -> 
+    | _ ->
 
         printfn "Scanning:"
         for f in files do
@@ -26,7 +26,7 @@ let public Main argv =
 
         printfn ""
 
-        let appendn (file:FileInfo) (line:string) = 
+        let appendn (file:FileInfo) (line:string) =
           use wr = StreamWriter(file.FullName, true)
           wr.WriteLine(line)
 
@@ -34,7 +34,7 @@ let public Main argv =
             // ensure that the file is empty
             opt.outputFile.Value.Delete()
 
-        let writen (s:string) = 
+        let writen (s:string) =
             match opt.outputFile with
                 | Some(file) -> appendn file s
                 | None -> printf "%s" s
@@ -44,7 +44,7 @@ let public Main argv =
         let projectGraph (fs:FileInfo list) =
 
             for f in fs do
-                try 
+                try
                     let sln = Solution.LoadFrom(f.FullName)
                     writefn "%s" sln.Name
                     writen "-------------------"
@@ -67,7 +67,7 @@ let public Main argv =
                     let sln = Solution.LoadFrom(f.FullName)
                     for sp in sln.Projects do
                         let proj = sp.Project
-                        let project_path = (Path.Combine(sln.ParentDirectory, sp.RelativePath)) 
+                        let project_path = (Path.Combine(sln.ParentDirectory, sp.RelativePath))
                         writefn "%s,%s,%s,%s,%s" sln.Filename sln.Name proj.RootNamespace proj.ProjectName project_path
                 with
                 | ex -> writefn "%s, Error loading solution, %s, %s" f.FullName ex.Message (ex.StackTrace.Replace(Environment.NewLine, "--NEWLINE--"))
@@ -79,7 +79,7 @@ let public Main argv =
                     let sln = Solution.LoadFrom(f.FullName)
                     for sp in sln.Projects do
                         let proj = sp.Project
-                        let project_path = (Path.Combine(sln.ParentDirectory, sp.RelativePath)) 
+                        let project_path = (Path.Combine(sln.ParentDirectory, sp.RelativePath))
                         for a in sp.Project.All<AssemblyReference>() do
                             let reference =
                                 match a.Include.Contains(",") with

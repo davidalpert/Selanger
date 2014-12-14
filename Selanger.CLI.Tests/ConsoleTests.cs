@@ -4,33 +4,15 @@ using System.IO;
 using System.Reflection;
 using ApprovalTests;
 using NUnit.Framework;
+using Selanger.CLI.Tests.Helpers;
 
 namespace Selanger.CLI.Tests
 {
     public class ConsoleTests
     {
-        private DirectoryInfo GetSourceDirectory()
-        {
-            var stacktrace = new StackTrace(true);
-            var first_frame = stacktrace.GetFrame(0);
-            var path_to_source = first_frame.GetFileName();
-            var path_to_source_folder = Path.GetDirectoryName(path_to_source);
-            return new DirectoryInfo(path_to_source_folder);
-        }
-
         [Test]
         public void Get_help()
         {
-            var source_dir = GetSourceDirectory();
-            var path_to_sln = Path.Combine(source_dir.FullName,"..","Selanger.sln");
-            var sln_file = new FileInfo(path_to_sln);
-            Assert.True(sln_file.Exists, sln_file.FullName);
-
-            var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var path_to_cli = Path.Combine(directory, "Selanger.exe");
-            var cli = new FileInfo(path_to_cli);
-            Assert.True(cli.Exists, cli.FullName);
-
             var args = new string[] {};
 
             string output;
@@ -42,7 +24,6 @@ namespace Selanger.CLI.Tests
             }
 
             Console.WriteLine(output);
-            Approvals.Verify(output);
         }
 
         [Test]
@@ -139,6 +120,33 @@ namespace Selanger.CLI.Tests
 
             Console.WriteLine(output);
             //Approvals.Verify(output);
+        }
+
+        private DirectoryInfo GetSourceDirectory()
+        {
+            var stacktrace = new StackTrace(true);
+            var first_frame = stacktrace.GetFrame(0);
+            var path_to_source = first_frame.GetFileName();
+            var path_to_source_folder = Path.GetDirectoryName(path_to_source);
+            return new DirectoryInfo(path_to_source_folder);
+        }
+
+        private static FileInfo GetSelengerExe()
+        {
+            var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var path_to_cli = Path.Combine(directory, "Selanger.exe");
+            var cli = new FileInfo(path_to_cli);
+            Assert.True(cli.Exists, cli.FullName);
+            return cli;
+        }
+
+        private FileInfo GetSolutionFile()
+        {
+            var source_dir = GetSourceDirectory();
+            var path_to_sln = Path.Combine(source_dir.FullName, "..", "Selanger.sln");
+            var sln_file = new FileInfo(path_to_sln);
+            Assert.True(sln_file.Exists, sln_file.FullName);
+            return sln_file;
         }
     }
 }
