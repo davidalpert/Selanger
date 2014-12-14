@@ -12,19 +12,16 @@ open CommandLineOptions
 let public Main argv =
     let opt = parseCommandLine argv
 
-    let toFileInfo f = new FileInfo(f)
+    match opt.directoryToScan with
+    | None -> print_help()
+    | Some(dirToScan) ->
 
-    let files = opt.files |> List.map toFileInfo
-
-    match opt.files.Length with
-    | 0 -> print_help()
-    | _ ->
-
-        printfn "Scanning:"
-        for f in files do
-           printfn "- %A" f.FullName
+        printfn "Scanning: %s" dirToScan.FullName
 
         printfn ""
+
+        let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
+
 
         let appendn (file:FileInfo) (line:string) =
           use wr = StreamWriter(file.FullName, true)
@@ -41,29 +38,34 @@ let public Main argv =
 
         let writefn fmt = Printf.kprintf writen fmt
 
+        let solutionList (slnFiles:FileInfo list) =
+            slnFiles
+            |> Seq.map (fun fi -> fi.FullName)
+            |> Seq.iter (printfn "- %s")
+
         let projectGraph (fs:FileInfo list) =
 
             for f in fs do
                 try
                     let sln = Solution.LoadFrom(f.FullName)
-                    writefn "%s" sln.Name
-                    writen "-------------------"
+                    printfn "%s.sln" sln.Name
+                    printfn "-------------------"
                     for p in sln.Projects do
                         let proj = p.Project
-                        writefn "- %s -> %s @ %s" proj.ProjectName proj.AssemblyName proj.RootNamespace
+                        printfn "- %s [builds to: %s]" (Path.GetFileName(proj.FileName)) proj.AssemblyName
                         for a in p.Project.All<AssemblyReference>() do
                             let reference =
                                 match a.Include.Contains(",") with
                                 | true -> a.Include.Substring(0,a.Include.IndexOf(','))
                                 | false -> a.Include
-                            writefn "  reference: %s" reference
+                            printfn "  --> %s" reference
                 with
-                | ex -> writefn "%s, Error loading solution, %s, %s" f.FullName ex.Message ex.StackTrace
+                | ex -> eprintfn "%s, Error loading solution, %s, %s" f.FullName ex.Message ex.StackTrace
 
         let namespaceList (fs:FileInfo list) =
             writen "solution file, solution name, root namespace, project name, project file"
             for f in fs do
-                try 
+                try
                     let sln = Solution.LoadFrom(f.FullName)
                     for sp in sln.Projects do
                         let proj = sp.Project
@@ -75,7 +77,7 @@ let public Main argv =
         let referencesList (fs:FileInfo list) =
             writen "solution file, solution name, project name, project file, assembly name, assembly reference"
             for f in fs do
-                try 
+                try
                     let sln = Solution.LoadFrom(f.FullName)
                     for sp in sln.Projects do
                         let proj = sp.Project
@@ -91,8 +93,9 @@ let public Main argv =
 
 
         match opt.report with
-        | ProjectGraphReport -> projectGraph files
-        | NamespaceReport -> namespaceList files
-        | ReferencesReport -> referencesList files
+        | SolutionReport-> solutionList solutionFiles
+        | ProjectGraphReport -> projectGraph solutionFiles
+        | NamespaceReport -> namespaceList solutionFiles
+        | ReferencesReport -> referencesList solutionFiles
 
     0 // return an integer exit code

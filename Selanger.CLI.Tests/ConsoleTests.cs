@@ -15,51 +15,46 @@ namespace Selanger.CLI.Tests
         {
             var args = new string[] {};
 
-            string output;
-            using (var cons = new RedirectedConsole())
-            {
-                Program.Main(args);
-
-                output = cons.Output;
-            }
+            var output = RunProgramAndCaptureOutput(args);
 
             Console.WriteLine(output);
         }
 
         [Test]
-        public void Can_run()
+        public void SolutionReport()
         {
-            var source_dir = GetSourceDirectory();
-            var path_to_sln = Path.Combine(source_dir.FullName,"..","Selanger.sln");
-            var sln_file = new FileInfo(path_to_sln);
-            Assert.True(sln_file.Exists, sln_file.FullName);
-
-            var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var path_to_cli = Path.Combine(directory, "Selanger.exe");
-            var cli = new FileInfo(path_to_cli);
-            Assert.True(cli.Exists, cli.FullName);
+            var solutionFileDirectory = GetSolutionFileDirectory();
 
             var args = new[]
                 {
-                    "-i",
-                    sln_file.FullName
+                    solutionFileDirectory.FullName
                 };
 
-            string output;
-            using (var cons = new RedirectedConsole())
-            {
-                Program.Main(args);
-
-                output = cons.Output;
-            }
+            var output = RunProgramAndCaptureOutput(args);
 
             Console.WriteLine(output);
         }
 
         [Test]
+        public void ProjectGraphReport()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-t", "g", solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
+        [Test]
+        [Ignore("TBD")]
         public void List_namespaces()
         {
-            var source_dir = GetSourceDirectory();
+            var source_dir = GetThisFileDirectory();
             var path_to_sln = Path.Combine(source_dir.FullName,"..","Selanger.sln");
             var sln_file = new FileInfo(path_to_sln);
             Assert.True(sln_file.Exists, sln_file.FullName);
@@ -91,7 +86,7 @@ namespace Selanger.CLI.Tests
         [Test]
         public void List_references()
         {
-            var source_dir = GetSourceDirectory();
+            var source_dir = GetThisFileDirectory();
             var path_to_sln = Path.Combine(source_dir.FullName,"..","Selanger.sln");
             var sln_file = new FileInfo(path_to_sln);
             Assert.True(sln_file.Exists, sln_file.FullName);
@@ -122,7 +117,19 @@ namespace Selanger.CLI.Tests
             //Approvals.Verify(output);
         }
 
-        private DirectoryInfo GetSourceDirectory()
+        private static string RunProgramAndCaptureOutput(string[] args)
+        {
+            string output;
+            using (var cons = new RedirectedConsole())
+            {
+                Program.Main(args);
+
+                output = cons.Output;
+            }
+            return output;
+        }
+
+        private DirectoryInfo GetThisFileDirectory()
         {
             var stacktrace = new StackTrace(true);
             var first_frame = stacktrace.GetFrame(0);
@@ -140,13 +147,13 @@ namespace Selanger.CLI.Tests
             return cli;
         }
 
-        private FileInfo GetSolutionFile()
+        private DirectoryInfo GetSolutionFileDirectory()
         {
-            var source_dir = GetSourceDirectory();
+            var source_dir = GetThisFileDirectory();
             var path_to_sln = Path.Combine(source_dir.FullName, "..", "Selanger.sln");
             var sln_file = new FileInfo(path_to_sln);
             Assert.True(sln_file.Exists, sln_file.FullName);
-            return sln_file;
+            return sln_file.Directory;
         }
     }
 }
