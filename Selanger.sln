@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger.Core", "Selanger.Core\Selanger.Core.fsproj", "{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selanger.Tests", "Selanger.Tests\Selanger.Tests.csproj", "{625668B2-7336-4E65-9B82-EBBFC5CEEE47}"

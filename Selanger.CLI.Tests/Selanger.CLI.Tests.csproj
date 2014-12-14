@@ -61,6 +61,20 @@
       <Name>Selanger.CLI</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="ConsoleTests.Get_help.approved.txt">
+      <DependentUpon>ConsoleTests.cs</DependentUpon>
+    </Content>
+    <Content Include="ConsoleTests.Get_help.received.txt">
+      <DependentUpon>ConsoleTests.cs</DependentUpon>
+    </Content>
+    <Content Include="ConsoleTests.List_references.approved.txt">
+      <DependentUpon>ConsoleTests.cs</DependentUpon>
+    </Content>
+    <Content Include="ConsoleTests.List_references.received.txt">
+      <DependentUpon>ConsoleTests.cs</DependentUpon>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
