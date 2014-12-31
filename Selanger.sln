@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger.Core", "Selanger.Core\Selanger.Core.fsproj", "{AF6B73C4-A21D-4F49-8235-05B4ECCCB5DB}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Selanger.CLI", "Selanger.CLI\Selanger.CLI.fsproj", "{C13E107C-6A1D-4FA2-A79D-85069D9F34EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Selanger.CLI.Tests", "Selanger.CLI.Tests\Selanger.CLI.Tests.csproj", "{E8F206B6-C788-49E4-9FF1-C2240F5F6169}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestFolder-Should_be_ignored_in_scan_output", "TestFolder-Should_be_ignored_in_scan_output", "{8085DC79-2635-43C0-A92F-E4A215DBCA2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

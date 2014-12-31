@@ -47,6 +47,8 @@ let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
 
     let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
 
+    let solutionFolderId = new Guid("2150E333-8FDC-42A3-9474-1A3956D46DE8")
+
     writen ScanRecord.HeadingRow out
 
     for f in solutionFiles do
@@ -55,16 +57,20 @@ let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
             RootPath = dirToScan;
             SolutionPath = Some(f);
             RelativeProjectPath = "";
-            ProjectFile = None
+            ProjectFile = None;
             Error = None;
         }
 
         try
             let sln = Solution.LoadFrom(f.FullName)
-            for p in sln.Projects do
+
+            let projectsToScan = sln.Projects
+                                 |> Seq.filter (fun p -> p.ProjectType <> solutionFolderId)
+
+            for p in projectsToScan do
                 let proj = p.Project
                 let projRecord = { slnRecord with
-                                        RelativeProjectPath = p.RelativePath;
+                                        RelativeProjectPath = p.RelativePath
                                         ProjectFile = Some(p.Project);
                                  }
                 writen projRecord.serialized out
