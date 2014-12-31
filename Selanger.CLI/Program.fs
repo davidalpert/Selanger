@@ -16,11 +16,23 @@ let public Main argv =
     | None -> print_help()
     | Some(dirToScan) ->
 
-        if opt.outputFile.IsSome then
-            // ensure that the file is empty
-            opt.outputFile.Value.Delete()
+        printfn "Scanning: %s" dirToScan.FullName
+
+        match opt.outputFile with
+        | Some(file) ->
+            printfn "Writing output to: %s" file.FullName
+            if (file.Exists) then
+                printfn "Removing a pre-existing file at that location."
+                file.Delete()
+
+        | None -> printfn "No output file specified; writing to console."
+
+        printfn ""
 
         ProjectScanner.Scan dirToScan opt.outputFile
+
+        printfn ""
+        printfn "done."
 
     0 // return an integer exit code
 
