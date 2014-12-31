@@ -20,28 +20,11 @@ let public Main argv =
 
         printfn ""
 
-        let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
-
-
-        let appendn (file:FileInfo) (line:string) =
-          use wr = StreamWriter(file.FullName, true)
-          wr.WriteLine(line)
-
         if opt.outputFile.IsSome then
             // ensure that the file is empty
             opt.outputFile.Value.Delete()
 
-        let writen (s:string) =
-            match opt.outputFile with
-                | Some(file) -> appendn file s
-                | None -> printf "%s" s
-
-        let writefn fmt = Printf.kprintf writen fmt
-
-        let solutionList (slnFiles:FileInfo list) =
-            slnFiles
-            |> Seq.map (fun fi -> fi.FullName)
-            |> Seq.iter (printfn "- %s")
+        let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
 
         let projectGraph (fs:FileInfo list) =
 
@@ -62,6 +45,30 @@ let public Main argv =
                 with
                 | ex -> eprintfn "%s, Error loading solution, %s, %s" f.FullName ex.Message ex.StackTrace
 
+        projectGraph solutionFiles
+
+    0 // return an integer exit code
+
+        (*
+        let appendn (file:FileInfo) (line:string) =
+          use wr = new StreamWriter(file.FullName, true)
+          wr.WriteLine(line)
+
+        let writen (s:string) =
+            match opt.outputFile with
+                | Some(file) -> appendn file s
+                | None -> printf "%s" s
+
+        let writefn fmt = Printf.kprintf writen fmt
+
+        let solutionList (slnFiles:FileInfo list) =
+            slnFiles
+            |> Seq.map (fun fi -> fi.FullName)
+            |> Seq.iter (printfn "- %s")
+        *)
+
+
+        (*
         let namespaceList (fs:FileInfo list) =
             writen "solution file, solution name, root namespace, project name, project file"
             for f in fs do
@@ -90,12 +97,4 @@ let public Main argv =
                             writefn "%s,%s,%s,%s,%s,%s" sln.Filename sln.Name proj.ProjectName project_path reference a.Include
                 with
                 | ex -> writefn "%s, Error loading solution, %s, %s" f.FullName ex.Message (ex.StackTrace.Replace(Environment.NewLine, "--NEWLINE--"))
-
-
-        match opt.report with
-        | SolutionReport-> solutionList solutionFiles
-        | ProjectGraphReport -> projectGraph solutionFiles
-        | NamespaceReport -> namespaceList solutionFiles
-        | ReferencesReport -> referencesList solutionFiles
-
-    0 // return an integer exit code
+        *)
