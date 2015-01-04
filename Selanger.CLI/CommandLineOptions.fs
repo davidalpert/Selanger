@@ -4,9 +4,14 @@ open System.IO
 
 // pattern sourced from: http://fsharpforfunandprofit.com/posts/pattern-matching-command-line/
 
+type ReportType =
+| ProjectsReport
+| StatisticsReport
+
 type CommandLineOptions = {
     directoryToScan: DirectoryInfo Option;
     outputFile: FileInfo Option;
+    reportType: ReportType;
 }
 
 let print_help() =
@@ -15,11 +20,14 @@ let print_help() =
     printfn ""
     printfn "Options:"
     printfn "-o|output {filepath} - path to the output file"
+    printfn "-p|projects - run a project report"
+    printfn "-s|stats    - run a statistics report"
     printfn ""
 
 // create the defaults
 let defaultOptions = {
         directoryToScan = None;
+        reportType = ProjectsReport;
         outputFile = None;
     }
 
@@ -33,6 +41,14 @@ let rec parseCommandLineRec args optionsSoFar =
         match xs with
         | file_path::xss ->
             parseCommandLineRec xss { optionsSoFar with outputFile=Some(new FileInfo(file_path)) }
+
+    | "-p"::xs
+    | "-projects"::xs ->
+        parseCommandLineRec xs { optionsSoFar with reportType=ProjectsReport; }
+
+    | "-s"::xs
+    | "-stats"::xs ->
+        parseCommandLineRec xs { optionsSoFar with reportType=StatisticsReport; }
 
     // handle unrecognized option and keep looping
     | x::xs ->

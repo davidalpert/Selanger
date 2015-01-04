@@ -59,6 +59,7 @@
     <Compile Include="CommandLineOptions.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="ProjectScanner.fs" />
+    <Compile Include="StasticsScanner.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />

@@ -29,7 +29,9 @@ let public Main argv =
 
         printfn ""
 
-        ProjectScanner.Scan dirToScan opt.outputFile
+        match opt.reportType with
+        | ProjectsReport -> ProjectScanner.Scan dirToScan opt.outputFile
+        | StatisticsReport -> StatisticsScanner.Scan dirToScan opt.outputFile
 
         printfn ""
         printfn "done."

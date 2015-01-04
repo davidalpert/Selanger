@@ -21,12 +21,44 @@ namespace Selanger.CLI.Tests
         }
 
         [Test]
-        public void SolutionReport()
+        public void ProjectsReport_implicit()
         {
             var solutionFileDirectory = GetSolutionFileDirectory();
 
             var args = new[]
                 {
+                    solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
+        [Test]
+        public void ProjectsReport_explicit()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-p",
+                    solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
+        [Test]
+        public void StatisticsReport()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-s",
                     solutionFileDirectory.FullName
                 };
 
