@@ -60,6 +60,7 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="ProjectScanner.fs" />
     <Compile Include="StasticsScanner.fs" />
+    <Compile Include="TreeScanner.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />

@@ -7,6 +7,7 @@ open System.IO
 type ReportType =
 | ProjectsReport
 | StatisticsReport
+| TreeReport
 
 type CommandLineOptions = {
     directoryToScan: DirectoryInfo Option;
@@ -22,6 +23,7 @@ let print_help() =
     printfn "-o|output {filepath} - path to the output file"
     printfn "-p|projects - run a project report"
     printfn "-s|stats    - run a statistics report"
+    printfn "-t|tree     - run a tree report"
     printfn ""
 
 // create the defaults
@@ -49,6 +51,10 @@ let rec parseCommandLineRec args optionsSoFar =
     | "-s"::xs
     | "-stats"::xs ->
         parseCommandLineRec xs { optionsSoFar with reportType=StatisticsReport; }
+
+    | "-t"::xs
+    | "-tree"::xs ->
+        parseCommandLineRec xs { optionsSoFar with reportType=TreeReport; }
 
     // handle unrecognized option and keep looping
     | x::xs ->

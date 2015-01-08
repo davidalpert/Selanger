@@ -29,9 +29,12 @@ let public Main argv =
 
         printfn ""
 
-        match opt.reportType with
-        | ProjectsReport -> ProjectScanner.Scan dirToScan opt.outputFile
-        | StatisticsReport -> StatisticsScanner.Scan dirToScan opt.outputFile
+        let scanFunction = match opt.reportType with
+                           | ProjectsReport   -> ProjectScanner.Scan
+                           | StatisticsReport -> StatisticsScanner.Scan
+                           | TreeReport       -> TreeScanner.Scan
+
+        scanFunction dirToScan opt.outputFile
 
         printfn ""
         printfn "done."

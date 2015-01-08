@@ -67,6 +67,22 @@ namespace Selanger.CLI.Tests
             Console.WriteLine(output);
         }
 
+        [Test]
+        public void TreeReport()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-t",
+                    solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
         private static string RunProgramAndCaptureOutput(string[] args)
         {
             string output;
