@@ -15,8 +15,28 @@ type AssemblyNamingConvention =
 
 let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
 
-    let printReferenceNode r =
-        writen "r" out
+    let printAssemblyReference (r:AssemblyReference) =
+        let specificVersion = match r.SpecificVersion.HasValue && r.SpecificVersion.Value with
+                              | true -> "specific: "
+                              | false -> ""
+        let msg = match String.IsNullOrWhiteSpace(r.HintPath) with
+                 | true  -> sprintf "       - %s" r.Include
+                 | false -> sprintf "       - %s (%s%s)" r.Include specificVersion r.HintPath
+        writen msg out
+
+    let printProjectReference (r:ProjectReference) =
+        let msg = sprintf "       + %s" r.ProjectName
+        writen msg out
+
+    let printDependencies (p:SolutionProject) =
+
+        p.Project.All<AssemblyReference>()
+        |> Seq.sortBy (fun r -> r.Include.ToLowerInvariant())
+        |> Seq.iter printAssemblyReference
+
+        p.Project.All<ProjectReference>()
+        |> Seq.sortBy (fun r -> r.ProjectName.ToLowerInvariant())
+        |> Seq.iter printProjectReference
 
     let printProjectNode (p:SolutionProject) =
         let projectName = p.ProjectName
@@ -41,6 +61,8 @@ let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
                       | (MatchesFolderName,       DoesNotMatchProjectName) -> sprintf "  [%s] %s (=> %s)" language p.ProjectName p.Project.AssemblyName
                       | (DoesNotMatchFolderName,  DoesNotMatchProjectName) -> sprintf "  [%s] %s (%s => %s)" language p.ProjectName (Path.GetDirectoryName(p.RelativePath.Replace('/','\\'))) p.Project.AssemblyName
         writen msg out
+
+        printDependencies p
 
     let solutionFolderId = new Guid("2150E333-8FDC-42A3-9474-1A3956D46DE8")
 
