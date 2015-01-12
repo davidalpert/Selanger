@@ -31,3 +31,22 @@ let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
                         )
 
     writen (sprintf "Projects: %i" projectsToScan.Length) out
+
+    let linesOfCode =
+        projectsToScan
+        |> Seq.collect (fun p ->
+                           let basePath = Path.GetDirectoryName(Path.Combine(dirToScan.FullName, p.RelativePath.Replace('/','\\')))
+                           p.Project.All<CodeFile>()
+                           |> Seq.map (fun c ->
+                                           let fullPath = Path.Combine(basePath,c.Include)
+                                           match File.Exists(fullPath) with
+                                           | true  -> Some(fullPath)
+                                           | false -> None
+                                      )
+                           |> Seq.filter (fun o -> o.IsSome)
+                           |> Seq.map (fun o -> o.Value)
+                       )
+        |> Seq.map (fun f -> File.ReadAllLines(f).Length)
+        |> Seq.sum
+
+    writen (sprintf "Lines of Code (approx): %i" linesOfCode ) out
