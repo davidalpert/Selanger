@@ -7,6 +7,9 @@ open Helpers
 
 let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
 
+    writen (sprintf "%s" dirToScan.FullName) out
+    writen "" out
+
     let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
 
     let solutionFolderId = new Guid("2150E333-8FDC-42A3-9474-1A3956D46DE8")

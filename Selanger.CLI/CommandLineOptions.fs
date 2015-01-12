@@ -8,6 +8,7 @@ type ReportType =
 | ProjectsReport
 | StatisticsReport
 | TreeReport
+| ApprovalReport
 
 type CommandLineOptions = {
     directoryToScan: DirectoryInfo Option;
@@ -24,6 +25,7 @@ let print_help() =
     printfn "-p|projects - run a project report"
     printfn "-s|stats    - run a statistics report"
     printfn "-t|tree     - run a tree report"
+    printfn "-a|verify   - run an approval/validation report (stats + tree)"
     printfn ""
 
 // create the defaults
@@ -55,6 +57,10 @@ let rec parseCommandLineRec args optionsSoFar =
     | "-t"::xs
     | "-tree"::xs ->
         parseCommandLineRec xs { optionsSoFar with reportType=TreeReport; }
+
+    | "-a"::xs
+    | "-verify"::xs ->
+        parseCommandLineRec xs { optionsSoFar with reportType=ApprovalReport; }
 
     // handle unrecognized option and keep looping
     | x::xs ->

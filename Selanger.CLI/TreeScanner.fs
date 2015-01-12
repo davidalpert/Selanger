@@ -87,6 +87,7 @@ let Scan (dirToScan:DirectoryInfo) (out:FileInfo option) =
     let solutionFiles = dirToScan.GetFiles("*.sln", SearchOption.AllDirectories) |> List.ofArray
 
     writen (sprintf "%s" dirToScan.FullName) out
+    writen "" out
 
     solutionFiles
     |> Seq.iter printSolutionNode

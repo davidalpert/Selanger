@@ -83,6 +83,22 @@ namespace Selanger.CLI.Tests
             Console.WriteLine(output);
         }
 
+        [Test]
+        public void ApprovalReport()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-a",
+                    solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
         private static string RunProgramAndCaptureOutput(string[] args)
         {
             string output;

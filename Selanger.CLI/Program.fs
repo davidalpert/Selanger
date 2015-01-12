@@ -7,6 +7,7 @@ open Selanger.Core
 open Microsoft.FSharp.Core.Printf
 
 open CommandLineOptions
+open Helpers
 
 [<EntryPoint>]
 let public Main argv =
@@ -33,6 +34,11 @@ let public Main argv =
                            | ProjectsReport   -> ProjectScanner.Scan
                            | StatisticsReport -> StatisticsScanner.Scan
                            | TreeReport       -> TreeScanner.Scan
+                           | ApprovalReport   -> (fun dir out ->
+                                                      StatisticsScanner.Scan dir out
+                                                      writen "" out
+                                                      TreeScanner.Scan dir out
+                                                 )
 
         scanFunction dirToScan opt.outputFile
 
