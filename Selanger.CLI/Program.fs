@@ -31,14 +31,15 @@ let public Main argv =
         printfn ""
 
         let scanFunction = match opt.reportType with
-                           | ProjectsReport   -> ProjectScanner.Scan
-                           | StatisticsReport -> StatisticsScanner.Scan
-                           | TreeReport       -> TreeScanner.Scan
-                           | ApprovalReport   -> (fun dir out ->
-                                                      StatisticsScanner.Scan dir out
-                                                      writen "" out
-                                                      TreeScanner.Scan dir out
-                                                 )
+                           | ProjectsReport     -> ProjectScanner.Scan
+                           | StatisticsReport   -> StatisticsScanner.Scan
+                           | NugetPackageReport -> NugetPackageScanner.Scan
+                           | TreeReport         -> TreeScanner.Scan
+                           | ApprovalReport     -> (fun dir out ->
+                                                        StatisticsScanner.Scan dir out
+                                                        writen "" out
+                                                        TreeScanner.Scan dir out
+                                                   )
 
         scanFunction dirToScan opt.outputFile
 

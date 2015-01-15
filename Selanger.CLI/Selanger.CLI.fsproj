@@ -60,10 +60,11 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="ProjectScanner.fs" />
     <Compile Include="StasticsScanner.fs" />
-    <Compile Include="TreeScanner.fs" />
-    <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />
+    <Compile Include="NugetPackageScanner.fs" />
+    <Compile Include="TreeScanner.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Selanger.Core\Selanger.Core.fsproj">

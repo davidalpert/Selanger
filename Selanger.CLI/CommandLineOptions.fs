@@ -9,6 +9,7 @@ type ReportType =
 | StatisticsReport
 | TreeReport
 | ApprovalReport
+| NugetPackageReport
 
 type CommandLineOptions = {
     directoryToScan: DirectoryInfo Option;
@@ -26,6 +27,7 @@ let print_help() =
     printfn "-s|stats    - run a statistics report"
     printfn "-t|tree     - run a tree report"
     printfn "-a|verify   - run an approval/validation report (stats + tree)"
+    printfn "-n|nuget    - run an nuget package report (list)"
     printfn ""
 
 // create the defaults
@@ -57,6 +59,10 @@ let rec parseCommandLineRec args optionsSoFar =
     | "-t"::xs
     | "-tree"::xs ->
         parseCommandLineRec xs { optionsSoFar with reportType=TreeReport; }
+
+    | "-n"::xs
+    | "-nuget"::xs ->
+        parseCommandLineRec xs { optionsSoFar with reportType=NugetPackageReport; }
 
     | "-a"::xs
     | "-verify"::xs ->

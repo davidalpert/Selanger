@@ -68,6 +68,22 @@ namespace Selanger.CLI.Tests
         }
 
         [Test]
+        public void NugetPackageReport()
+        {
+            var solutionFileDirectory = GetSolutionFileDirectory();
+
+            var args = new[]
+                {
+                    "-n",
+                    solutionFileDirectory.FullName
+                };
+
+            var output = RunProgramAndCaptureOutput(args);
+
+            Console.WriteLine(output);
+        }
+
+        [Test]
         public void TreeReport()
         {
             var solutionFileDirectory = GetSolutionFileDirectory();
