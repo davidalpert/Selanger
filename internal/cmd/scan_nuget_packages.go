@@ -8,6 +8,7 @@ import (
 
 	"github.com/davidalpert/go-printers/v1"
 	"github.com/davidalpert/selanger/internal/diagnostics"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -164,6 +165,13 @@ type SolutionPackageValidation struct {
 type PackageVersionConflict struct {
 	PackageName     string
 	VersionProjects map[string][]string // version -> []projectNames
+}
+
+// NugetValidationResults combines all validation results for output
+type NugetValidationResults struct {
+	ProjectValidations  []ProjectPackageValidation
+	SolutionValidation  SolutionPackageValidation
+	OverallValid        bool
 }
 
 func (o *ScanNugetPackagesOptions) validateProjectPackages(proj ProjectReference) (ProjectPackageValidation, error) {
@@ -364,62 +372,69 @@ func (o *ScanNugetPackagesOptions) readProjectPackages(projectPath string) ([]Pa
 }
 
 func (o *ScanNugetPackagesOptions) outputResults(projectValidations []ProjectPackageValidation, solutionValidation SolutionPackageValidation) error {
-	// Output per-project validation results
-	fmt.Fprintln(o.Out, "\n=== Per-Project Validation ===")
+	// Create combined results structure
+	overallValid := solutionValidation.IsValid
 	for _, pv := range projectValidations {
-		status := "PASS"
 		if !pv.IsValid {
-			status = "FAIL"
-		}
-		fmt.Fprintf(o.Out, "\nProject: %s [%s]\n", pv.ProjectName, status)
-
-		if len(pv.OrphanedConfigReferences) > 0 {
-			fmt.Fprintf(o.Out, "  Orphaned packages.config references (%d):\n", len(pv.OrphanedConfigReferences))
-			for _, pkg := range pv.OrphanedConfigReferences {
-				fmt.Fprintf(o.Out, "    - %s %s\n", pkg.Name, pkg.Version)
-			}
-		}
-
-		if len(pv.BrokenProjectReferences) > 0 {
-			fmt.Fprintf(o.Out, "  Broken project references (%d):\n", len(pv.BrokenProjectReferences))
-			for _, pkg := range pv.BrokenProjectReferences {
-				fmt.Fprintf(o.Out, "    - %s %s\n", pkg.Name, pkg.Version)
-			}
-		}
-
-		if len(pv.VersionMismatches) > 0 {
-			fmt.Fprintf(o.Out, "  Version mismatches (%d):\n", len(pv.VersionMismatches))
-			for _, mm := range pv.VersionMismatches {
-				fmt.Fprintf(o.Out, "    - %s: packages.config=%s, project=%s\n", mm.PackageName, mm.ConfigVersion, mm.ProjectVersion)
-			}
-		}
-
-		if pv.IsValid {
-			fmt.Fprintf(o.Out, "  All package references are consistent.\n")
+			overallValid = false
+			break
 		}
 	}
 
-	// Output solution-wide validation results
-	fmt.Fprintln(o.Out, "\n=== Solution-Wide Validation ===")
-	if solutionValidation.IsValid {
-		fmt.Fprintln(o.Out, "PASS: All packages are at consistent versions across projects.")
-	} else {
-		fmt.Fprintf(o.Out, "FAIL: Found %d package(s) with version conflicts:\n\n", len(solutionValidation.PackageVersionConflicts))
-		for _, conflict := range solutionValidation.PackageVersionConflicts {
-			fmt.Fprintf(o.Out, "Package: %s\n", conflict.PackageName)
-			for version, projects := range conflict.VersionProjects {
-				fmt.Fprintf(o.Out, "  Version %s used by:\n", version)
-				for _, proj := range projects {
-					fmt.Fprintf(o.Out, "    - %s\n", proj)
-				}
+	results := NugetValidationResults{
+		ProjectValidations: projectValidations,
+		SolutionValidation: solutionValidation,
+		OverallValid:       overallValid,
+	}
+
+	// Output per-project validation summary table
+	err := o.WithTableWriter("Per-Project Package Validation", func(t *tablewriter.Table) {
+		t.SetHeader([]string{"project", "status", "orphaned", "broken", "mismatched"})
+		t.SetAutoWrapText(false)
+		for _, pv := range projectValidations {
+			status := "PASS"
+			if !pv.IsValid {
+				status = "FAIL"
 			}
-			fmt.Fprintln(o.Out)
+			t.Append([]string{
+				pv.ProjectName,
+				status,
+				fmt.Sprintf("%d", len(pv.OrphanedConfigReferences)),
+				fmt.Sprintf("%d", len(pv.BrokenProjectReferences)),
+				fmt.Sprintf("%d", len(pv.VersionMismatches)),
+			})
+		}
+	}).WriteOutput(results)
+
+	if err != nil {
+		return err
+	}
+
+	// Output solution-wide validation summary table if there are conflicts
+	if len(solutionValidation.PackageVersionConflicts) > 0 {
+		err = o.WithTableWriter("Solution-Wide Package Version Conflicts", func(t *tablewriter.Table) {
+			t.SetHeader([]string{"package", "versions"})
+			t.SetAutoWrapText(false)
+			for _, conflict := range solutionValidation.PackageVersionConflicts {
+				versions := make([]string, 0, len(conflict.VersionProjects))
+				for version := range conflict.VersionProjects {
+					versions = append(versions, version)
+				}
+				t.Append([]string{
+					conflict.PackageName,
+					fmt.Sprintf("%d", len(versions)),
+				})
+			}
+		}).WriteOutput(results)
+
+		if err != nil {
+			return err
 		}
 	}
 
 	// Return error if validation failed
 	if !solutionValidation.IsValid {
-		return fmt.Errorf("solution-wide validation failed")
+		return fmt.Errorf("solution-wide validation failed: %d package(s) with version conflicts", len(solutionValidation.PackageVersionConflicts))
 	}
 
 	for _, pv := range projectValidations {
