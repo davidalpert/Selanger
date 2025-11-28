@@ -102,22 +102,23 @@ func (o *ScanModulesOptions) Run() error {
 
 	// Output results
 	return o.WithTableWriter(fmt.Sprintf("projects from %s", o.SolutionFileOrFolder), func(t *tablewriter.Table) {
-		t.SetHeader([]string{"solution", "project name", "project folder", "parent folder", "project file"})
+		t.SetHeader([]string{"solution", "project name", "folder name", "file name", "project file"})
 		t.SetAutoWrapText(false)
 		for _, proj := range allProjects {
-			t.Append([]string{proj.SolutionFile, proj.Name, proj.ProjectFolder, proj.ParentFolderName, proj.ProjectFileName})
+			t.Append([]string{proj.SolutionFile, proj.Name, proj.ParentFolderName, proj.FileNameWithoutExt, proj.Path})
 		}
 	}).WriteOutput(allProjects)
 }
 
 // ProjectReference represents a project reference in a solution file
 type ProjectReference struct {
-	SolutionFile     string
-	Name             string
-	Path             string
-	ProjectFolder    string // folder path to the directory containing the project file
-	ParentFolderName string // name of the immediate parent directory containing the project file
-	ProjectFileName  string // project file filename
+	SolutionFile       string
+	Name               string
+	Path               string // full path to the project file
+	ProjectFolder      string // folder path to the directory containing the project file (deprecated, use ParentFolderName)
+	ParentFolderName   string // name of the immediate parent directory containing the project file
+	FileNameWithoutExt string // project file name without extension
+	ProjectID          string // project GUID
 }
 
 // findSolutionFiles finds all .sln files - handles both a direct .sln file path or a folder
@@ -189,16 +190,31 @@ func (o *ScanModulesOptions) parseSolutionFile(slnPath string) ([]ProjectReferen
 	defer file.Close()
 
 	// Regular expression to match Project lines in .sln files
-	// Format: Project("{GUID}") = "ProjectName", "Path\To\Project.csproj", "{GUID}"
-	projectRegex := regexp.MustCompile(`Project\("\{[^}]+\}"\)\s*=\s*"([^"]+)"\s*,\s*"([^"]+)"`)
+	// Format: Project("{TYPE-GUID}") = "ProjectName", "Path\To\Project.csproj", "{PROJECT-GUID}"
+	projectRegex := regexp.MustCompile(`Project\("\{([^}]+)\}"\)\s*=\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"\{([^}]+)\}"`)
+
+	// Solution folder type GUID - we want to filter these out
+	const solutionFolderTypeGUID = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := projectRegex.FindStringSubmatch(line)
-		if len(matches) == 3 {
-			projectName := matches[1]
-			projectPath := matches[2]
+		if len(matches) == 5 {
+			projectTypeGUID := strings.ToUpper(matches[1])
+			projectName := matches[2]
+			projectPath := matches[3]
+			projectID := strings.ToUpper(matches[4])
+
+			// Skip solution folders
+			if projectTypeGUID == solutionFolderTypeGUID {
+				diagnostics.Log.WithFields(log.Fields{
+					"line":        line,
+					"projectName": projectName,
+					"projectType": projectTypeGUID,
+				}).Debug("skipping solution folder")
+				continue
+			}
 			diagnostics.Log.WithFields(log.Fields{
 				"line":        line,
 				"projectName": projectName,
@@ -217,6 +233,10 @@ func (o *ScanModulesOptions) parseSolutionFile(slnPath string) ([]ProjectReferen
 			projectFileName := filepath.Base(projectPath)
 			projectFolder := filepath.Dir(projectPath)
 			parentFolderName := filepath.Base(projectFolder)
+
+			// Extract filename without extension
+			fileNameWithoutExt := strings.TrimSuffix(projectFileName, filepath.Ext(projectFileName))
+
 			diagnostics.Log.WithFields(log.Fields{
 				"line":                         line,
 				"projectName":                  projectName,
@@ -225,6 +245,7 @@ func (o *ScanModulesOptions) parseSolutionFile(slnPath string) ([]ProjectReferen
 				"filepath.Base(projectPath)":   projectFileName,
 				"filepath.Dir(projectPath)":    projectFolder,
 				"filepath.Base(projectFolder)": parentFolderName,
+				"fileNameWithoutExt":           fileNameWithoutExt,
 			}).Debug("parsed project reference: extracted components")
 
 			// Determine the path to display
@@ -238,12 +259,13 @@ func (o *ScanModulesOptions) parseSolutionFile(slnPath string) ([]ProjectReferen
 			}
 
 			projects = append(projects, ProjectReference{
-				SolutionFile:     slnPath,
-				Name:             projectName,
-				Path:             displayPath,
-				ProjectFolder:    displayFolder,
-				ParentFolderName: parentFolderName,
-				ProjectFileName:  projectFileName,
+				SolutionFile:       slnPath,
+				Name:               projectName,
+				Path:               displayPath,
+				ProjectFolder:      displayFolder,
+				ParentFolderName:   parentFolderName,
+				FileNameWithoutExt: fileNameWithoutExt,
+				ProjectID:          projectID,
 			})
 		}
 	}

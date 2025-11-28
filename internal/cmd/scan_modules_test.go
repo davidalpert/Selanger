@@ -42,28 +42,31 @@ EndGlobal
 			showAbsolutePaths: false,
 			expected: []ProjectReference{
 				{
-					SolutionFile:     "TestSolution.sln",
-					Name:             "MyApp",
-					Path:             filepath.FromSlash("src/MyApp/MyApp.csproj"),
-					ProjectFolder:    filepath.FromSlash("src/MyApp"),
-					ParentFolderName: "MyApp",
-					ProjectFileName:  "MyApp.csproj",
+					SolutionFile:       "TestSolution.sln",
+					Name:               "MyApp",
+					Path:               filepath.FromSlash("src/MyApp/MyApp.csproj"),
+					ProjectFolder:      filepath.FromSlash("src/MyApp"),
+					ParentFolderName:   "MyApp",
+					FileNameWithoutExt: "MyApp",
+					ProjectID:          "12345678-1234-1234-1234-123456789012",
 				},
 				{
-					SolutionFile:     "TestSolution.sln",
-					Name:             "MyApp.Core",
-					Path:             filepath.FromSlash("src/MyApp.Core/MyApp.Core.csproj"),
-					ProjectFolder:    filepath.FromSlash("src/MyApp.Core"),
-					ParentFolderName: "MyApp.Core",
-					ProjectFileName:  "MyApp.Core.csproj",
+					SolutionFile:       "TestSolution.sln",
+					Name:               "MyApp.Core",
+					Path:               filepath.FromSlash("src/MyApp.Core/MyApp.Core.csproj"),
+					ProjectFolder:      filepath.FromSlash("src/MyApp.Core"),
+					ParentFolderName:   "MyApp.Core",
+					FileNameWithoutExt: "MyApp.Core",
+					ProjectID:          "87654321-4321-4321-4321-210987654321",
 				},
 				{
-					SolutionFile:     "TestSolution.sln",
-					Name:             "MyApp.Tests",
-					Path:             filepath.FromSlash("test/MyApp.Tests/MyApp.Tests.csproj"),
-					ProjectFolder:    filepath.FromSlash("test/MyApp.Tests"),
-					ParentFolderName: "MyApp.Tests",
-					ProjectFileName:  "MyApp.Tests.csproj",
+					SolutionFile:       "TestSolution.sln",
+					Name:               "MyApp.Tests",
+					Path:               filepath.FromSlash("test/MyApp.Tests/MyApp.Tests.csproj"),
+					ProjectFolder:      filepath.FromSlash("test/MyApp.Tests"),
+					ParentFolderName:   "MyApp.Tests",
+					FileNameWithoutExt: "MyApp.Tests",
+					ProjectID:          "ABCDEF12-ABCD-ABCD-ABCD-123456ABCDEF",
 				},
 			},
 			expectError: false,
@@ -78,12 +81,13 @@ EndProject
 			showAbsolutePaths: false,
 			expected: []ProjectReference{
 				{
-					SolutionFile:     "NestedSolution.sln",
-					Name:             "DeepProject",
-					Path:             filepath.FromSlash("level1/level2/level3/DeepProject/DeepProject.csproj"),
-					ProjectFolder:    filepath.FromSlash("level1/level2/level3/DeepProject"),
-					ParentFolderName: "DeepProject",
-					ProjectFileName:  "DeepProject.csproj",
+					SolutionFile:       "NestedSolution.sln",
+					Name:               "DeepProject",
+					Path:               filepath.FromSlash("level1/level2/level3/DeepProject/DeepProject.csproj"),
+					ProjectFolder:      filepath.FromSlash("level1/level2/level3/DeepProject"),
+					ParentFolderName:   "DeepProject",
+					FileNameWithoutExt: "DeepProject",
+					ProjectID:          "11111111-1111-1111-1111-111111111111",
 				},
 			},
 			expectError: false,
@@ -98,12 +102,38 @@ EndProject
 			showAbsolutePaths: false,
 			expected: []ProjectReference{
 				{
-					SolutionFile:     "RootProject.sln",
-					Name:             "RootApp",
-					Path:             "RootApp.csproj",
-					ProjectFolder:    ".",
-					ParentFolderName: ".",
-					ProjectFileName:  "RootApp.csproj",
+					SolutionFile:       "RootProject.sln",
+					Name:               "RootApp",
+					Path:               "RootApp.csproj",
+					ProjectFolder:      ".",
+					ParentFolderName:   ".",
+					FileNameWithoutExt: "RootApp",
+					ProjectID:          "22222222-2222-2222-2222-222222222222",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name:    "filter out solution folders",
+			slnPath: "WithFolders.sln",
+			slnContent: `Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealProject", "RealProject\RealProject.csproj", "{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}"
+EndProject
+`,
+			showAbsolutePaths: false,
+			expected: []ProjectReference{
+				{
+					SolutionFile:       "WithFolders.sln",
+					Name:               "RealProject",
+					Path:               filepath.FromSlash("RealProject/RealProject.csproj"),
+					ProjectFolder:      "RealProject",
+					ParentFolderName:   "RealProject",
+					FileNameWithoutExt: "RealProject",
+					ProjectID:          "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
 				},
 			},
 			expectError: false,
@@ -154,7 +184,8 @@ EndProject
 				assert.Equal(t, expected.Path, result[i].Path, "project path should match for project %d", i)
 				assert.Equal(t, expected.ProjectFolder, result[i].ProjectFolder, "project folder should match for project %d", i)
 				assert.Equal(t, expected.ParentFolderName, result[i].ParentFolderName, "parent folder name should match for project %d", i)
-				assert.Equal(t, expected.ProjectFileName, result[i].ProjectFileName, "project file name should match for project %d", i)
+				assert.Equal(t, expected.FileNameWithoutExt, result[i].FileNameWithoutExt, "file name without extension should match for project %d", i)
+				assert.Equal(t, expected.ProjectID, result[i].ProjectID, "project ID should match for project %d", i)
 			}
 		})
 	}
@@ -194,5 +225,6 @@ EndProject
 	assert.Equal(t, filepath.Join("/projects", "src", "MyApp", "MyApp.csproj"), result[0].Path)
 	assert.Equal(t, filepath.Join("/projects", "src", "MyApp"), result[0].ProjectFolder)
 	assert.Equal(t, "MyApp", result[0].ParentFolderName)
-	assert.Equal(t, "MyApp.csproj", result[0].ProjectFileName)
+	assert.Equal(t, "MyApp", result[0].FileNameWithoutExt)
+	assert.Equal(t, "12345678-1234-1234-1234-123456789012", result[0].ProjectID)
 }
