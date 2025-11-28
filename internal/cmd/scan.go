@@ -31,6 +31,7 @@ func NewCmdScan(s printers.IOStreams) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdScanModules(s))
+	cmd.AddCommand(NewCmdScanNugetPackages(s))
 
 	return cmd
 }
