@@ -3,13 +3,14 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/davidalpert/selanger/internal/diagnostics"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/davidalpert/go-printers/v1"
+	"github.com/davidalpert/selanger/internal/diagnostics"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -101,19 +102,22 @@ func (o *ScanModulesOptions) Run() error {
 
 	// Output results
 	return o.WithTableWriter(fmt.Sprintf("projects from %s", o.SolutionFileOrFolder), func(t *tablewriter.Table) {
-		t.SetHeader([]string{"solution", "project name", "project path"})
+		t.SetHeader([]string{"solution", "project name", "project folder", "parent folder", "project file"})
 		t.SetAutoWrapText(false)
 		for _, proj := range allProjects {
-			t.Append([]string{proj.SolutionFile, proj.Name, proj.Path})
+			t.Append([]string{proj.SolutionFile, proj.Name, proj.ProjectFolder, proj.ParentFolderName, proj.ProjectFileName})
 		}
 	}).WriteOutput(allProjects)
 }
 
 // ProjectReference represents a project reference in a solution file
 type ProjectReference struct {
-	SolutionFile string
-	Name         string
-	Path         string
+	SolutionFile     string
+	Name             string
+	Path             string
+	ProjectFolder    string // folder path to the directory containing the project file
+	ParentFolderName string // name of the immediate parent directory containing the project file
+	ProjectFileName  string // project file filename
 }
 
 // findSolutionFiles finds all .sln files - handles both a direct .sln file path or a folder
@@ -195,21 +199,51 @@ func (o *ScanModulesOptions) parseSolutionFile(slnPath string) ([]ProjectReferen
 		if len(matches) == 3 {
 			projectName := matches[1]
 			projectPath := matches[2]
+			diagnostics.Log.WithFields(log.Fields{
+				"line":        line,
+				"projectName": projectName,
+				"projectPath": projectPath,
+			}).Debug("parsed project reference")
 
-			// Convert backslashes to forward slashes for cross-platform compatibility
-			projectPath = filepath.ToSlash(projectPath)
+			// .sln files always use backslashes, convert to OS-specific separator
+			projectPath = strings.ReplaceAll(projectPath, "\\", string(filepath.Separator))
+			diagnostics.Log.WithFields(log.Fields{
+				"line":        line,
+				"projectName": projectName,
+				"projectPath": projectPath,
+			}).Debug("parsed project reference: normalized path")
+
+			// Extract path components using filepath package (uses OS-specific separators)
+			projectFileName := filepath.Base(projectPath)
+			projectFolder := filepath.Dir(projectPath)
+			parentFolderName := filepath.Base(projectFolder)
+			diagnostics.Log.WithFields(log.Fields{
+				"line":                         line,
+				"projectName":                  projectName,
+				"projectPath":                  projectPath,
+				"projectFolder":                projectFolder,
+				"filepath.Base(projectPath)":   projectFileName,
+				"filepath.Dir(projectPath)":    projectFolder,
+				"filepath.Base(projectFolder)": parentFolderName,
+			}).Debug("parsed project reference: extracted components")
 
 			// Determine the path to display
 			displayPath := projectPath
+			displayFolder := projectFolder
 			if o.ShowAbsolutePaths {
 				slnDir := filepath.Dir(fullPath)
+				// Join paths using OS-specific separators
 				displayPath = filepath.Join(slnDir, projectPath)
+				displayFolder = filepath.Join(slnDir, projectFolder)
 			}
 
 			projects = append(projects, ProjectReference{
-				SolutionFile: slnPath,
-				Name:         projectName,
-				Path:         displayPath,
+				SolutionFile:     slnPath,
+				Name:             projectName,
+				Path:             displayPath,
+				ProjectFolder:    displayFolder,
+				ParentFolderName: parentFolderName,
+				ProjectFileName:  projectFileName,
 			})
 		}
 	}
