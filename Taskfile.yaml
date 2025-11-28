@@ -1,0 +1,282 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  REPO_NAME: selanger
+  REPO_OWNER: davidalpert
+  CMD_NAME: selange
+  CURRENT_VERSION:
+    sh: sbot get version
+  VERSION: '{{ .NEXT_VERSION | default .CURRENT_VERSION }}'
+  GITBRANCH:
+    sh: 'git rev-parse --abbrev-ref HEAD'
+  GITCOMMITMESSAGE:
+    sh: 'git log -1 --pretty=%s'
+  GITDIRTY:
+    sh: 'if [ -n "$(git status --porcelain)" ]; then echo "true"; else echo "false"; fi'
+  GITSHA:
+    sh: 'git rev-parse --short HEAD'
+  SEMVER: '{{ .NEXT_VERSION | default .CURRENT_VERSION }}-{{.GITSHA}}{{ fromJson .GITDIRTY | ternary "+dirty" "" }}'
+
+tasks:
+  default:
+    deps:
+      - help
+    silent: true
+
+  cit:
+    desc: CI task; cleans, run tests, and builds
+    deps:
+      - clean
+      - vale
+      - build
+      - test
+    cmds:
+      - task reset-version
+
+  clean:
+    desc: clean built output
+    cmds:
+      - rm -rf ./bin
+      - rm -rf ./aruba
+
+  reset-version:
+    desc: reset any changes to the version detail file which is generated as part of the build
+    cmds:
+      - git checkout -- internal/version/detail.go
+
+  doctor:
+    desc: run doctor.sh to sort out development dependencies
+    cmds:
+      - ./.tools/doctor.sh
+
+  gen:
+    desc: run code-generation
+    run: always
+    vars:
+      VERSION: "{{ .NEXT_VERSION | default .VERSION }}"
+      SEMVER: "{{ .SEMVER }}"
+    deps:
+      - peg
+    cmds:
+      - task: gen:version
+        vars:
+          VERSION: "{{ .VERSION }}"
+
+  gen:version:
+    desc: updates the version
+    run: once
+    cmds:
+      - echo "{{ .CMD_NAME }}" > ./internal/version/_APPNAME.txt
+      - echo "{{ .VERSION }}" > ./internal/version/_APPVERSION.txt
+      - echo "{{ .GITBRANCH }}" > ./internal/version/_GITBRANCH.txt
+    vars:
+      VERSION: "{{ .NEXT_VERSION | default .VERSION }}"
+    status:
+      - '[[ "{{ .CMD_NAME }}" == "$(cat ./internal/version/_APPNAME.txt)" ]]'
+      - '[[ "{{ .VERSION }}" == "$(cat ./internal/version/_APPVERSION.txt)" ]]'
+      - '[[ "{{ .GITBRANCH }}" == "$(cat ./internal/version/_GITBRANCH.txt)" ]]'
+
+  peg:
+    desc: re-generate parsers from PEG grammar only when needed
+    run: once
+    silent: true
+    vars:
+      PEG_GRAMMARS:
+        sh: find . -name '*.peg'
+    cmds:
+      - for: { var: PEG_GRAMMARS }
+        task: peg-one
+        vars:
+          FILE: '{{.ITEM}}'
+    preconditions:
+      - sh: find . -name '*.peg'
+
+  peg-one:
+    vars:
+      OUTFILE: '{{ .FILE | replace ".peg" ".go" | replace "/_" "/" }}'
+    cmds:
+      - pigeon -o {{ .OUTFILE }} {{ .FILE }}
+    status:
+      - '[ {{.FILE}} -ot {{.OUTFILE}} ]'
+
+  peg-all:
+    desc: re-generate parsers from PEG grammar
+    run: once
+    silent: true
+    cmds:
+      - "find . -name '*.peg' | while read -r file; do gofile=\"${file%.peg}.go\"; peg_cmd=\"pigeon -o ${gofile/_/} $file\"; echo \"Running: $peg_cmd\"; $peg_cmd; done"
+
+  vale:
+    desc: run linting rules against markdown files
+    run: once
+    cmds:
+      - vale README.md CONTRIBUTING.md # we don't valedate CHANGELOG.md as that reflects historical commit summaries
+    status:
+      - '[[ "$GITHUB_ACTIONS" -neq "true" ]]'
+
+  test:
+    desc: run tests
+    run: once
+    deps:
+      - gen
+    cmds:
+      - go test ./...
+    silent: true
+
+  autotest:
+    desc: run tests continuously using goconvey's test UI
+    deps:
+      - gen
+    cmds:
+      - goconvey
+    silent: true
+
+  build:
+    desc: build for current GOOS/GOARCH
+    run: once
+    cmds:
+      - task: gen
+      - task: test
+      - mkdir -p ./bin
+      - GOFLAGS='-buildvcs=true' go build -o ./bin/{{ .CMD_NAME }} ./cmd/{{ .CMD_NAME }}
+
+  build-all:
+    desc: build for all distributions
+    run: once
+    deps:
+      - build
+      - build-windows
+
+  build-windows:
+    desc: build for windows
+    run: once
+    cmds:
+      - task: gen
+      - task: test
+      - mkdir -p ./bin/win_x86_64
+      - GOOS=windows GOARCH=amd64 GOFLAGS='-buildvcs=true' go build -o ./bin/win_x86_64/{{ .CMD_NAME }}.exe ./cmd/{{ .CMD_NAME }}
+
+  install:
+    desc: install selange from local source into GOPATH
+    run: once
+    deps:
+      - build
+    cmds:
+      - 'echo "writing: ${GOPATH}/bin/selange"'
+      - 'cp ./bin/selange ${GOPATH}/bin/'
+      - '${GOPATH}/bin/selange install'
+
+  uninstall:
+    desc: uninstall selange from GOPATH
+    run: once
+    cmds:
+      - 'echo "uninstalling: ${CMD_BIN}"'
+      - '${CMD_BIN} uninstall'
+    env:
+      CMD_BIN:
+        sh: which selange
+    precondition:
+      - test -f ${CMD_BIN}
+
+  dev:frontend:
+    desc: run the frontend in dev mode (with HMR)
+    deps:
+      - build:web:deps
+    dir: internal/web/app
+    cmds:
+      - yarn dev
+
+  dev:frontend:debug:
+    desc: run the frontend in debug mode (with HMR)
+    deps:
+      - build:web:deps
+    dir: internal/web/app
+    cmds:
+      - yarn dev:debug
+
+  dev:backend:
+    desc: run the backend
+    deps:
+      - gen
+    env:
+      DRISH_PORT: '8081'
+      DRISH_OPEN_ON_START: false
+      DRISH_AUTO_CLOSE: false
+      DRISH_DEBUG_SIGNALR: true
+    cmds:
+      - go run cmd/selange/main.go
+
+  dev:
+    desc: run backend and frontend in dev mode
+    deps:
+      - dev:frontend
+      - dev:backend
+
+  changelog:
+    desc: generate/update CHANGELOG.md
+    cmds:
+      - git-chglog --output CHANGELOG.md
+
+  preview-release-notes:
+    desc: preview release notes (generates RELEASE_NOTES.md)
+    cmds:
+      - git-chglog --output RELEASE_NOTES.md --template .chglog/RELEASE_NOTES.tpl.md "v{{ .VERSION }}"
+
+  release:
+    deps:
+      - test
+    cmds:
+      - task: gen
+        vars:
+          NEXT_VERSION: "{{ .NEXT_VERSION }}"
+      - git-chglog --next-tag v{{ .NEXT_VERSION }} --output CHANGELOG.md
+      - git add -f CHANGELOG.md
+      - git add -f internal/version
+      - git commit --message "release notes for v{{ .NEXT_VERSION }}"
+      - sbot release version --mode {{ .BUMP_TYPE }}
+      - git show --no-patch --format=short v{{ .NEXT_VERSION }}
+      - git diff --name-only HEAD~1
+      - 'echo "internal/version/_APPVERSION: $(cat internal/version/_APPVERSION.txt)"'
+    preconditions:
+      - sh: git diff-files --quiet
+        msg: There are unstaged changes; clean your working directory before releasing.
+      - sh: git diff-index --quiet --cached HEAD --
+        msg: There are uncomitted changes; clean your working directory before releasing.
+    vars:
+      NEXT_VERSION:
+        sh: sbot predict version --mode {{ .BUMP_TYPE }}
+    
+  release-patch:
+    desc: release a patch update
+    cmds:
+      - task: release
+        vars:
+          BUMP_TYPE: patch
+
+  release-minor:
+    desc: release a minor update
+    cmds:
+      - task: release
+        vars:
+          BUMP_TYPE: minor
+
+  release-major:
+    desc: release a major update
+    cmds:
+      - task: release
+        vars:
+          BUMP_TYPE: major
+
+  help:
+    desc: list targets
+    cmds:
+      - echo "{{ .CMD_NAME}} v{{ .SEMVER }}"
+      - echo ""
+      - task --list
+      - echo ""
+      - 'echo "Commit Types:"'
+      - cat .chglog/config.yml | yq '.options.commit_groups.title_maps'
+    silent: true
+

@@ -1,0 +1,80 @@
+name: Pull Request Feedback
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  pull_request:
+    branches:
+    - main
+
+permissions:
+  # contents: write
+  # packages: write
+  issues: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4 # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+
+    - name: Fetch all tags
+      run: git fetch --force --tags
+
+    - name: Set Variables
+      run: |
+        echo "GO_VERSION=$(cat .tool-versions | grep golang | awk '{print $2}')" >> $GITHUB_ENV
+        echo "RUBY_VERSION=$(cat .ruby-version)" >> $GITHUB_ENV
+
+    - name: Setup Reviewdog
+      uses: reviewdog/action-setup@v1
+      with:
+        reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
+
+    - name: Vale Linter # https://github.com/marketplace/actions/vale-linter
+      uses: errata-ai/vale-action@reviewdog
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        fail_on_error: true
+        files: '["README.md", "CONTRIBUTING.md"]'
+        filter_mode: nofilter
+        reporter: github-pr-check
+        version: 2.17.0
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install Task
+      uses: arduino/setup-task@v2
+
+    - name: Setup Ruby, JRuby and TruffleRuby # for integration testing
+      uses: ruby/setup-ruby@v1.176.0
+      with:
+        ruby-version: ${{ env.RUBY_VERSION }}
+
+    - name: Setup build dependencies
+      run: |
+        echo skipping: go install github.com/kisielk/godepgraph@latest
+        go install github.com/restechnica/semverbot/cmd/sbot@latest
+        echo skipping: go install github.com/siderolabs/conform/cmd/conform@latest
+        go install github.com/git-chglog/git-chglog/cmd/git-chglog@v0.15.1
+
+    - name: Validate build dependencies
+      run: |
+        task doctor
+
+    - name: Unit tests
+      run: |
+        task test
+
+    - name: "Features"
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -o pipefail
+        task features | reviewdog -name=features -fail-on-error=true -efm="cucumber %f:%l # Scenario: %m" -diff="git diff FETCH_HEAD" -filter-mode=nofilter -reporter=github-pr-check -tee

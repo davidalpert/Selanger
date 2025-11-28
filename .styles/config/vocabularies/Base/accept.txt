@@ -1,0 +1,15 @@
+Github
+[Tt]ask
+[Tt]askfile
+nodenv
+asdf
+aruba
+[Gg]olang
+nodejs
+go-drish
+drish
+GPL
+url
+Kotze
+Idele
+Zsh
