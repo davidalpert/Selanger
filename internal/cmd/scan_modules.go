@@ -102,10 +102,14 @@ func (o *ScanModulesOptions) Run() error {
 
 	// Output results
 	return o.WithTableWriter(fmt.Sprintf("projects from %s", o.SolutionFileOrFolder), func(t *tablewriter.Table) {
-		t.SetHeader([]string{"solution", "project name", "folder name", "file name", "project file"})
+		t.SetHeader([]string{"solution", "aligned", "project name", "folder name", "file name", "project file"})
 		t.SetAutoWrapText(false)
 		for _, proj := range allProjects {
-			t.Append([]string{proj.SolutionFile, proj.Name, proj.ParentFolderName, proj.FileNameWithoutExt, proj.Path})
+			aligned := "false"
+			if proj.IsAligned() {
+				aligned = "true"
+			}
+			t.Append([]string{proj.SolutionFile, aligned, proj.Name, proj.ParentFolderName, proj.FileNameWithoutExt, proj.Path})
 		}
 	}).WriteOutput(allProjects)
 }
@@ -119,6 +123,11 @@ type ProjectReference struct {
 	ParentFolderName   string // name of the immediate parent directory containing the project file
 	FileNameWithoutExt string // project file name without extension
 	ProjectID          string // project GUID
+}
+
+// IsAligned returns true if ProjectName, FolderName, and FileNameWithoutExt are all the same
+func (p *ProjectReference) IsAligned() bool {
+	return p.Name == p.ParentFolderName && p.Name == p.FileNameWithoutExt
 }
 
 // findSolutionFiles finds all .sln files - handles both a direct .sln file path or a folder

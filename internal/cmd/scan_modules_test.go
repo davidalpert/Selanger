@@ -228,3 +228,62 @@ EndProject
 	assert.Equal(t, "MyApp", result[0].FileNameWithoutExt)
 	assert.Equal(t, "12345678-1234-1234-1234-123456789012", result[0].ProjectID)
 }
+
+func TestProjectReference_IsAligned(t *testing.T) {
+	tests := []struct {
+		name               string
+		projectName        string
+		folderName         string
+		fileNameWithoutExt string
+		expectedAligned    bool
+	}{
+		{
+			name:               "aligned project",
+			projectName:        "MyApp",
+			folderName:         "MyApp",
+			fileNameWithoutExt: "MyApp",
+			expectedAligned:    true,
+		},
+		{
+			name:               "mismatched project name",
+			projectName:        "MyApplication",
+			folderName:         "MyApp",
+			fileNameWithoutExt: "MyApp",
+			expectedAligned:    false,
+		},
+		{
+			name:               "mismatched folder name",
+			projectName:        "MyApp",
+			folderName:         "MyApplication",
+			fileNameWithoutExt: "MyApp",
+			expectedAligned:    false,
+		},
+		{
+			name:               "mismatched file name",
+			projectName:        "MyApp",
+			folderName:         "MyApp",
+			fileNameWithoutExt: "MyApplication",
+			expectedAligned:    false,
+		},
+		{
+			name:               "all different",
+			projectName:        "Foo",
+			folderName:         "Bar",
+			fileNameWithoutExt: "Baz",
+			expectedAligned:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			proj := ProjectReference{
+				Name:               tt.projectName,
+				ParentFolderName:   tt.folderName,
+				FileNameWithoutExt: tt.fileNameWithoutExt,
+			}
+
+			result := proj.IsAligned()
+			assert.Equal(t, tt.expectedAligned, result)
+		})
+	}
+}
