@@ -34,6 +34,7 @@ func TestReadPackagesConfig(t *testing.T) {
 	assert.Equal(t, "packages.config", packages[0].Source)
 	assert.Equal(t, "Microsoft.AspNet.WebApi.Client", packages[1].Name)
 	assert.Equal(t, "5.2.7", packages[1].Version)
+	assert.Equal(t, "packages.config", packages[1].Source)
 }
 
 func TestReadProjectPackages(t *testing.T) {
@@ -62,8 +63,10 @@ func TestReadProjectPackages(t *testing.T) {
 	assert.Equal(t, "Newtonsoft.Json", packages[0].Name)
 	assert.Equal(t, "12.0.3", packages[0].Version)
 	assert.Equal(t, "project", packages[0].Source)
+
 	assert.Equal(t, "Microsoft.AspNet.WebApi.Client", packages[1].Name)
 	assert.Equal(t, "5.2.7", packages[1].Version)
+	assert.Equal(t, "project", packages[1].Source)
 }
 
 func TestValidateProjectPackages_AllAligned(t *testing.T) {
