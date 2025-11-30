@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"github.com/davidalpert/selanger/internal/dotnet"
 	"path/filepath"
 	"testing"
 
-	"github.com/davidalpert/go-printers/v1"
+	"github.com/davidalpert/selanger/internal/dotnet"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,11 +22,8 @@ func TestReadPackagesConfig(t *testing.T) {
 	err := afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		FS: fs,
-	}
-
-	packages, err := o.readPackagesConfig(configPath)
+	scanner := dotnet.NewSolutionScanner(fs, "/project", false)
+	packages, err := scanner.ReadPackagesConfig(configPath)
 	require.NoError(t, err)
 	assert.Len(t, packages, 2)
 	assert.Equal(t, "Newtonsoft.Json", packages[0].Name)
@@ -52,13 +48,8 @@ func TestReadProjectPackages(t *testing.T) {
 	err := afero.WriteFile(fs, projectPath, []byte(projectContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: "/",
-		FS:                   fs,
-	}
-
-	packages, err := o.readProjectPackages(projectPath)
+	scanner := dotnet.NewSolutionScanner(fs, "/", false)
+	packages, err := scanner.ReadProjectPackages(projectPath)
 	require.NoError(t, err)
 	assert.Len(t, packages, 2)
 	assert.Equal(t, "Newtonsoft.Json", packages[0].Name)
@@ -93,18 +84,13 @@ func TestValidateProjectPackages_AllAligned(t *testing.T) {
 	err = afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: "/solution",
-		FS:                   fs,
-	}
-
 	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
 
-	validation, err := o.validateProjectPackages(proj)
+	scanner := dotnet.NewSolutionScanner(fs, "/solution", false)
+	validation, err := scanner.ValidateProjectPackages(proj)
 	require.NoError(t, err)
 	assert.True(t, validation.IsValid)
 	assert.Len(t, validation.OrphanedConfigReferences, 0)
@@ -136,18 +122,13 @@ func TestValidateProjectPackages_OrphanedConfigReference(t *testing.T) {
 	err = afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: "/solution",
-		FS:                   fs,
-	}
-
 	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
 
-	validation, err := o.validateProjectPackages(proj)
+	scanner := dotnet.NewSolutionScanner(fs, "/solution", false)
+	validation, err := scanner.ValidateProjectPackages(proj)
 	require.NoError(t, err)
 	assert.False(t, validation.IsValid)
 	assert.Len(t, validation.OrphanedConfigReferences, 1)
@@ -180,18 +161,13 @@ func TestValidateProjectPackages_BrokenProjectReference(t *testing.T) {
 	err = afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: "/solution",
-		FS:                   fs,
-	}
-
 	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
 
-	validation, err := o.validateProjectPackages(proj)
+	scanner := dotnet.NewSolutionScanner(fs, "/solution", false)
+	validation, err := scanner.ValidateProjectPackages(proj)
 	require.NoError(t, err)
 	assert.False(t, validation.IsValid)
 	assert.Len(t, validation.OrphanedConfigReferences, 0)
@@ -223,18 +199,13 @@ func TestValidateProjectPackages_VersionMismatch(t *testing.T) {
 	err = afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: "/solution",
-		FS:                   fs,
-	}
-
 	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
 
-	validation, err := o.validateProjectPackages(proj)
+	scanner := dotnet.NewSolutionScanner(fs, "/solution", false)
+	validation, err := scanner.ValidateProjectPackages(proj)
 	require.NoError(t, err)
 	assert.False(t, validation.IsValid)
 	assert.Len(t, validation.OrphanedConfigReferences, 0)
@@ -255,8 +226,9 @@ func TestValidateSolutionPackages_NoConflicts(t *testing.T) {
 		},
 	}
 
-	o := &ScanNugetPackagesOptions{}
-	validation := o.validateSolutionPackages(allPackages)
+	fs := afero.NewMemMapFs()
+	scanner := dotnet.NewSolutionScanner(fs, "/", false)
+	validation := scanner.ValidateSolutionPackages(allPackages)
 
 	assert.True(t, validation.IsValid)
 	assert.Len(t, validation.PackageVersionConflicts, 0)
@@ -273,8 +245,9 @@ func TestValidateSolutionPackages_WithConflicts(t *testing.T) {
 		},
 	}
 
-	o := &ScanNugetPackagesOptions{}
-	validation := o.validateSolutionPackages(allPackages)
+	fs := afero.NewMemMapFs()
+	scanner := dotnet.NewSolutionScanner(fs, "/", false)
+	validation := scanner.ValidateSolutionPackages(allPackages)
 
 	assert.False(t, validation.IsValid)
 	assert.Len(t, validation.PackageVersionConflicts, 1)
@@ -314,18 +287,13 @@ func TestValidateProjectPackages_WithSlnFilePath(t *testing.T) {
 	err = afero.WriteFile(fs, configPath, []byte(packagesConfigContent), 0644)
 	require.NoError(t, err)
 
-	o := &ScanNugetPackagesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: slnPath, // This is a .sln file, not a folder
-		FS:                   fs,
-	}
-
 	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
 
-	validation, err := o.validateProjectPackages(proj)
+	scanner := dotnet.NewSolutionScanner(fs, slnPath, false)
+	validation, err := scanner.ValidateProjectPackages(proj)
 	require.NoError(t, err)
 	assert.True(t, validation.IsValid)
 	assert.Len(t, validation.OrphanedConfigReferences, 0)

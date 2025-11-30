@@ -2,6 +2,7 @@ package dotnet
 
 import (
 	"bufio"
+	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -203,4 +204,180 @@ func (s *SolutionScanner) GetAllProjects() ([]ProjectReference, error) {
 	}
 
 	return allProjects, nil
+}
+
+// ValidateProjectPackages validates NuGet packages for a single project
+func (s *SolutionScanner) ValidateProjectPackages(proj ProjectReference) (ProjectPackageValidation, error) {
+	validation := ProjectPackageValidation{
+		ProjectName: proj.Name,
+	}
+
+	// Determine base directory: if SolutionFileOrFolder is a .sln file, use its directory
+	baseDir := s.SolutionFileOrFolder
+	if filepath.Ext(s.SolutionFileOrFolder) == ".sln" {
+		baseDir = filepath.Dir(s.SolutionFileOrFolder)
+	}
+
+	// Get the directory containing the project file
+	projectDir := filepath.Dir(proj.Path)
+	if !filepath.IsAbs(projectDir) {
+		projectDir = filepath.Join(baseDir, projectDir)
+	}
+
+	// Read packages.config if it exists
+	packagesConfigPath := filepath.Join(projectDir, "packages.config")
+	configPackages, err := s.ReadPackagesConfig(packagesConfigPath)
+	if err != nil && !os.IsNotExist(err) {
+		return validation, err
+	}
+
+	// Read PackageReference nodes from project file
+	projectPackages, err := s.ReadProjectPackages(proj.Path)
+	if err != nil {
+		return validation, err
+	}
+
+	// Create maps for easier lookup
+	configMap := make(map[string]string) // packageName -> version
+	for _, pkg := range configPackages {
+		configMap[pkg.Name] = pkg.Version
+	}
+
+	projectMap := make(map[string]string) // packageName -> version
+	for _, pkg := range projectPackages {
+		projectMap[pkg.Name] = pkg.Version
+	}
+
+	// Collect all unique packages
+	allPackagesMap := make(map[string]PackageReference)
+	for _, pkg := range configPackages {
+		allPackagesMap[pkg.Name] = pkg
+	}
+	for _, pkg := range projectPackages {
+		if existing, exists := allPackagesMap[pkg.Name]; !exists || existing.Source == "packages.config" {
+			allPackagesMap[pkg.Name] = pkg
+		}
+	}
+	for _, pkg := range allPackagesMap {
+		validation.AllPackages = append(validation.AllPackages, pkg)
+	}
+
+	// Check for orphaned packages.config references
+	for _, pkg := range configPackages {
+		if _, exists := projectMap[pkg.Name]; !exists {
+			validation.OrphanedConfigReferences = append(validation.OrphanedConfigReferences, pkg)
+		}
+	}
+
+	// Check for broken project references
+	for _, pkg := range projectPackages {
+		if _, exists := configMap[pkg.Name]; !exists {
+			validation.BrokenProjectReferences = append(validation.BrokenProjectReferences, pkg)
+		}
+	}
+
+	// Check for version mismatches
+	for pkgName, configVersion := range configMap {
+		if projectVersion, exists := projectMap[pkgName]; exists {
+			if configVersion != projectVersion {
+				validation.VersionMismatches = append(validation.VersionMismatches, VersionMismatch{
+					PackageName:    pkgName,
+					ConfigVersion:  configVersion,
+					ProjectVersion: projectVersion,
+				})
+			}
+		}
+	}
+
+	// Validation passes only if all counts are zero
+	validation.IsValid = len(validation.OrphanedConfigReferences) == 0 &&
+		len(validation.BrokenProjectReferences) == 0 &&
+		len(validation.VersionMismatches) == 0
+
+	return validation, nil
+}
+
+// ValidateSolutionPackages validates package versions across the entire solution
+func (s *SolutionScanner) ValidateSolutionPackages(allPackages map[string]map[string][]string) SolutionPackageValidation {
+	validation := SolutionPackageValidation{
+		IsValid: true,
+	}
+
+	for pkgName, versions := range allPackages {
+		if len(versions) > 1 {
+			conflict := PackageVersionConflict{
+				PackageName:     pkgName,
+				VersionProjects: versions,
+			}
+			validation.PackageVersionConflicts = append(validation.PackageVersionConflicts, conflict)
+			validation.IsValid = false
+		}
+	}
+
+	return validation
+}
+
+// ReadPackagesConfig reads and parses a packages.config file
+func (s *SolutionScanner) ReadPackagesConfig(path string) ([]PackageReference, error) {
+	var packages []PackageReference
+
+	data, err := afero.ReadFile(s.FS, path)
+	if err != nil {
+		return packages, err
+	}
+
+	var config PackagesConfig
+	if err := xml.Unmarshal(data, &config); err != nil {
+		return packages, fmt.Errorf("error parsing packages.config: %w", err)
+	}
+
+	for _, pkg := range config.Packages {
+		packages = append(packages, PackageReference{
+			Name:    pkg.ID,
+			Version: pkg.Version,
+			Source:  "packages.config",
+		})
+	}
+
+	return packages, nil
+}
+
+// ReadProjectPackages reads and parses PackageReference elements from a project file
+func (s *SolutionScanner) ReadProjectPackages(projectPath string) ([]PackageReference, error) {
+	var packages []PackageReference
+
+	// Determine base directory: if SolutionFileOrFolder is a .sln file, use its directory
+	baseDir := s.SolutionFileOrFolder
+	if filepath.Ext(s.SolutionFileOrFolder) == ".sln" {
+		baseDir = filepath.Dir(s.SolutionFileOrFolder)
+	}
+
+	// Resolve full path
+	fullPath := projectPath
+	if !filepath.IsAbs(projectPath) {
+		fullPath = filepath.Join(baseDir, projectPath)
+	}
+
+	data, err := afero.ReadFile(s.FS, fullPath)
+	if err != nil {
+		return packages, err
+	}
+
+	var project ProjectFile
+	if err := xml.Unmarshal(data, &project); err != nil {
+		return packages, fmt.Errorf("error parsing project file: %w", err)
+	}
+
+	// Extract PackageReference elements
+	for _, pkg := range project.PackageReferences {
+		if pkg.Include != "" && pkg.Version != "" {
+			packages = append(packages, PackageReference{
+				Name:    pkg.Include,
+				Version: pkg.Version,
+				Source:  "project",
+			})
+		}
+	}
+
+	return packages, nil
 }
