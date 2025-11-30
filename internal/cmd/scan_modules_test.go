@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/davidalpert/go-printers/v1"
+	"github.com/davidalpert/selanger/internal/dotnet"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ func TestParseSolutionFile(t *testing.T) {
 		slnContent        string
 		slnPath           string
 		showAbsolutePaths bool
-		expected          []ProjectReference
+		expected          []dotnet.ProjectReference
 		expectError       bool
 	}{
 		{
@@ -40,7 +40,7 @@ Global
 EndGlobal
 `,
 			showAbsolutePaths: false,
-			expected: []ProjectReference{
+			expected: []dotnet.ProjectReference{
 				{
 					SolutionFile:       "TestSolution.sln",
 					Name:               "MyApp",
@@ -79,7 +79,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepProject", "level1\level
 EndProject
 `,
 			showAbsolutePaths: false,
-			expected: []ProjectReference{
+			expected: []dotnet.ProjectReference{
 				{
 					SolutionFile:       "NestedSolution.sln",
 					Name:               "DeepProject",
@@ -100,7 +100,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RootApp", "RootApp.csproj",
 EndProject
 `,
 			showAbsolutePaths: false,
-			expected: []ProjectReference{
+			expected: []dotnet.ProjectReference{
 				{
 					SolutionFile:       "RootProject.sln",
 					Name:               "RootApp",
@@ -125,7 +125,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CCCCCCCC
 EndProject
 `,
 			showAbsolutePaths: false,
-			expected: []ProjectReference{
+			expected: []dotnet.ProjectReference{
 				{
 					SolutionFile:       "WithFolders.sln",
 					Name:               "RealProject",
@@ -143,7 +143,7 @@ EndProject
 			slnPath:           "Empty.sln",
 			slnContent:        `Microsoft Visual Studio Solution File, Format Version 12.00`,
 			showAbsolutePaths: false,
-			expected:          []ProjectReference{},
+			expected:          []dotnet.ProjectReference{},
 			expectError:       false,
 		},
 	}
@@ -157,16 +157,11 @@ EndProject
 			err := afero.WriteFile(fs, tt.slnPath, []byte(tt.slnContent), 0644)
 			require.NoError(t, err, "failed to create test solution file")
 
-			// Create the options
-			o := &ScanModulesOptions{
-				PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-				SolutionFileOrFolder: tt.slnPath,
-				FS:                   fs,
-				ShowAbsolutePaths:    tt.showAbsolutePaths,
-			}
+			// Create the scanner
+			scanner := dotnet.NewSolutionScanner(fs, tt.slnPath, tt.showAbsolutePaths)
 
 			// Parse the solution file
-			result, err := o.parseSolutionFile(tt.slnPath)
+			result, err := scanner.ParseSolutionFile(tt.slnPath)
 
 			// Check error expectations
 			if tt.expectError {
@@ -205,16 +200,11 @@ EndProject
 	err := afero.WriteFile(fs, slnPath, []byte(slnContent), 0644)
 	require.NoError(t, err)
 
-	// Create the options with absolute paths enabled
-	o := &ScanModulesOptions{
-		PrinterOptions:       printers.NewPrinterOptions().WithDefaultTableWriter(),
-		SolutionFileOrFolder: slnPath,
-		FS:                   fs,
-		ShowAbsolutePaths:    true,
-	}
+	// Create the scanner with absolute paths enabled
+	scanner := dotnet.NewSolutionScanner(fs, slnPath, true)
 
 	// Parse the solution file
-	result, err := o.parseSolutionFile(slnPath)
+	result, err := scanner.ParseSolutionFile(slnPath)
 
 	require.NoError(t, err)
 	require.Len(t, result, 1)
@@ -276,7 +266,7 @@ func TestProjectReference_IsAligned(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			proj := ProjectReference{
+			proj := dotnet.ProjectReference{
 				Name:               tt.projectName,
 				ParentFolderName:   tt.folderName,
 				FileNameWithoutExt: tt.fileNameWithoutExt,

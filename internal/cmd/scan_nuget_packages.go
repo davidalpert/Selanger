@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/davidalpert/go-printers/v1"
-	"github.com/davidalpert/selanger/internal/diagnostics"
+	"github.com/davidalpert/selanger/internal/dotnet"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -80,32 +80,11 @@ func (o *ScanNugetPackagesOptions) Validate() error {
 
 // Run the command
 func (o *ScanNugetPackagesOptions) Run() error {
-	// Reuse the solution scanning logic to get projects
-	scanModulesOpts := &ScanModulesOptions{
-		PrinterOptions:       o.PrinterOptions,
-		SolutionFileOrFolder: o.SolutionFileOrFolder,
-		FS:                   o.FS,
-		ShowAbsolutePaths:    o.ShowAbsolutePaths,
-	}
-
-	slnFiles, err := scanModulesOpts.findSolutionFiles()
+	// Create scanner and get all projects
+	scanner := dotnet.NewSolutionScanner(o.FS, o.SolutionFileOrFolder, o.ShowAbsolutePaths)
+	allProjects, err := scanner.GetAllProjects()
 	if err != nil {
-		return fmt.Errorf("error finding solution files: %w", err)
-	}
-
-	if len(slnFiles) == 0 {
-		return fmt.Errorf("no .sln files found in %s", o.SolutionFileOrFolder)
-	}
-
-	// Parse all solution files and collect projects
-	var allProjects []ProjectReference
-	for _, slnFile := range slnFiles {
-		diagnostics.Log.WithField("solutionFile", slnFile).Debug("parsing solution file for nuget packages")
-		projects, err := scanModulesOpts.parseSolutionFile(slnFile)
-		if err != nil {
-			return fmt.Errorf("error parsing %s: %w", slnFile, err)
-		}
-		allProjects = append(allProjects, projects...)
+		return err
 	}
 
 	// Analyze packages for each project
@@ -178,7 +157,7 @@ type NugetValidationResults struct {
 	OverallValid       bool
 }
 
-func (o *ScanNugetPackagesOptions) validateProjectPackages(proj ProjectReference) (ProjectPackageValidation, error) {
+func (o *ScanNugetPackagesOptions) validateProjectPackages(proj dotnet.ProjectReference) (ProjectPackageValidation, error) {
 	validation := ProjectPackageValidation{
 		ProjectName: proj.Name,
 	}

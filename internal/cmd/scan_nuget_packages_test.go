@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/davidalpert/selanger/internal/dotnet"
 	"path/filepath"
 	"testing"
 
@@ -98,7 +99,7 @@ func TestValidateProjectPackages_AllAligned(t *testing.T) {
 		FS:                   fs,
 	}
 
-	proj := ProjectReference{
+	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
@@ -141,7 +142,7 @@ func TestValidateProjectPackages_OrphanedConfigReference(t *testing.T) {
 		FS:                   fs,
 	}
 
-	proj := ProjectReference{
+	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
@@ -185,7 +186,7 @@ func TestValidateProjectPackages_BrokenProjectReference(t *testing.T) {
 		FS:                   fs,
 	}
 
-	proj := ProjectReference{
+	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
@@ -228,7 +229,7 @@ func TestValidateProjectPackages_VersionMismatch(t *testing.T) {
 		FS:                   fs,
 	}
 
-	proj := ProjectReference{
+	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
@@ -319,7 +320,7 @@ func TestValidateProjectPackages_WithSlnFilePath(t *testing.T) {
 		FS:                   fs,
 	}
 
-	proj := ProjectReference{
+	proj := dotnet.ProjectReference{
 		Name: "MyProject",
 		Path: "MyProject/MyProject.csproj",
 	}
