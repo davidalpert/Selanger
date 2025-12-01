@@ -184,6 +184,12 @@ func (o *ScanNugetPackagesOptions) outputResults(projectValidations []dotnet.Pro
 		return renderingErr
 	}
 
+	if o.FormatCategory() == "json" || o.FormatCategory() == "yaml" {
+		// don't want additional error messages in the structured output
+		// in case it is being piped somewhere else
+		return nil
+	}
+
 	// Return error if validation failed
 	if !solutionValidation.IsValid {
 		return fmt.Errorf("solution-wide validation failed: %d package(s) with version conflicts", len(solutionValidation.PackageVersionConflicts))
